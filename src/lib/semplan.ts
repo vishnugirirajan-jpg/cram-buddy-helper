@@ -9,7 +9,7 @@ export const totalHours = (s: Pick<Subject, "credits" | "difficulty">) => s.cred
 
 /** Days left from today until the exam day (today counts, exam day doesn't). Minimum 1. */
 export function daysLeft(examDate: string, today = new Date()): number {
-  const [y, m, d] = examDate.split("-").map(Number);
+  const [y = 0, m = 1, d = 1] = examDate.split("-").map(Number);
   const exam = Date.UTC(y, m - 1, d);
   const now = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   return Math.max(1, Math.round((exam - now) / 86400000));
