@@ -14,21 +14,23 @@ export const Route = createFileRoute("/plan")({
   component: PlanPage,
 });
 
-const STUDY_KEY = "semplan.studied";
-const START_KEY = "semplan.start";
+const STUDY_KEY = "semplan.studied"; // { [date]: { [subjectId]: ms } }
+const START_KEY = "semplan.start"; // { subjectId, at } | null
+
+type StartState = { subjectId: string; at: number } | null;
 
 function PlanPage() {
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [studiedMs, setStudiedMs] = useState(0);
-  const [start, setStart] = useState<number | null>(null);
+  const [studied, setStudied] = useState<Record<string, number>>({});
+  const [start, setStart] = useState<StartState>(null);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     setPlan(loadPlan());
     const all = JSON.parse(localStorage.getItem(STUDY_KEY) || "{}");
-    setStudiedMs(all[todayKey()] || 0);
+    setStudied(all[todayKey()] || {});
     const s = localStorage.getItem(START_KEY);
-    if (s) setStart(Number(s));
+    if (s) setStart(JSON.parse(s));
   }, []);
 
   useEffect(() => {
@@ -37,15 +39,32 @@ function PlanPage() {
     return () => clearInterval(t);
   }, [start]);
 
-  const startTimer = () => { const t = Date.now(); setStart(t); setNow(t); localStorage.setItem(START_KEY, String(t)); };
+  const persistStudied = (next: Record<string, number>) => {
+    const all = JSON.parse(localStorage.getItem(STUDY_KEY) || "{}");
+    all[todayKey()] = next;
+    localStorage.setItem(STUDY_KEY, JSON.stringify(all));
+    setStudied(next);
+  };
+
+  const startTimer = (subjectId: string) => {
+    // Stop any running timer first, saving its time
+    let base = studied;
+    if (start) {
+      base = { ...studied, [start.subjectId]: (studied[start.subjectId] || 0) + (Date.now() - start.at) };
+      persistStudied(base);
+    }
+    const s = { subjectId, at: Date.now() };
+    setStart(s);
+    setNow(Date.now());
+    localStorage.setItem(START_KEY, JSON.stringify(s));
+  };
+
   const stopTimer = () => {
     if (!start) return;
-    const total = studiedMs + (Date.now() - start);
-    const all = JSON.parse(localStorage.getItem(STUDY_KEY) || "{}");
-    all[todayKey()] = total;
-    localStorage.setItem(STUDY_KEY, JSON.stringify(all));
+    const next = { ...studied, [start.subjectId]: (studied[start.subjectId] || 0) + (Date.now() - start.at) };
+    persistStudied(next);
     localStorage.removeItem(START_KEY);
-    setStudiedMs(total); setStart(null);
+    setStart(null);
   };
 
   if (!plan) {
@@ -59,10 +78,11 @@ function PlanPage() {
 
   const days = daysLeft(plan.examDate);
   const target = plan.subjects.reduce((a, s) => a + dailyTarget(s, days), 0);
-  const liveMs = studiedMs + (start ? now - start : 0);
-  const studiedH = liveMs / 3600000;
+  const liveMs = (id: string) => (studied[id] || 0) + (start?.subjectId === id ? now - start.at : 0);
+  const totalLiveMs = plan.subjects.reduce((a, s) => a + liveMs(s.id), 0);
+  const studiedH = totalLiveMs / 3600000;
   const pct = Math.min(100, target ? (studiedH / target) * 100 : 0);
-  const clock = new Date(liveMs).toISOString().slice(11, 19);
+  const clock = new Date(totalLiveMs).toISOString().slice(11, 19);
 
   return (
     <main className="mx-auto max-w-md px-5 py-8 space-y-6">
@@ -82,27 +102,38 @@ function PlanPage() {
           <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="text-sm text-muted-foreground">{fmtHours(studiedH)} studied · {Math.round(pct)}%{pct >= 100 ? " — target hit! 🎉" : ""}</p>
-        {start ? (
-          <button className="btn-big btn-stop" onClick={stopTimer}>■ Stop</button>
-        ) : (
-          <button className="btn-big btn-primary" onClick={startTimer}>▶ Start</button>
-        )}
+        <p className="text-sm text-muted-foreground">Tap a subject below to start studying it.</p>
       </section>
 
       <section className="space-y-2">
         <h2 className="font-display text-lg font-semibold">By subject</h2>
-        {plan.subjects.map((s) => (
-          <div key={s.id} className="card-box flex items-center justify-between py-3">
-            <div>
-              <p className="font-semibold">{s.name}</p>
-              <p className="text-sm text-muted-foreground">{totalHours(s)}h total</p>
+        {plan.subjects.map((s) => {
+          const running = start?.subjectId === s.id;
+          const ms = liveMs(s.id);
+          const subClock = new Date(ms).toISOString().slice(11, 19);
+          return (
+            <div key={s.id} className={`card-box py-3 space-y-3 ${running ? "ring-2 ring-primary" : ""}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">{s.name}</p>
+                  <p className="text-sm text-muted-foreground">{totalHours(s)}h total · {fmtHours(ms / 3600000)} studied today</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-xl font-bold text-primary">{fmtHours(dailyTarget(s, days))}</p>
+                  <p className="text-xs text-muted-foreground">per day</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-mono text-2xl tabular-nums">{subClock}</p>
+                {running ? (
+                  <button className="btn-big btn-stop" onClick={stopTimer}>■ Stop</button>
+                ) : (
+                  <button className="btn-big btn-primary" onClick={() => startTimer(s.id)}>▶ Start</button>
+                )}
+              </div>
             </div>
-            <div className="text-right">
-              <p className="font-display text-xl font-bold text-primary">{fmtHours(dailyTarget(s, days))}</p>
-              <p className="text-xs text-muted-foreground">per day</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
     </main>
   );
