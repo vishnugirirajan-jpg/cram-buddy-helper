@@ -9,8 +9,8 @@ describe("suggested hours formula", () => {
     expect(suggestedHours(4, "medium", "mixed")).toBe(12);
     expect(suggestedHours(2, "hard", "mixed")).toBe(8);
   });
-  it("problem-solving multiplies by 1.2", () => expect(suggestedHours(4, "hard", "problem-solving")).toBe(19.2));
-  it("memorising multiplies by 0.9", () => expect(suggestedHours(4, "hard", "memorising")).toBe(14.4));
+  it("problem-solving multiplies by 1.2 (rounded to 0.5h)", () => expect(suggestedHours(4, "hard", "problem-solving")).toBe(19));
+  it("memorising multiplies by 0.9 (rounded to 0.5h)", () => expect(suggestedHours(4, "hard", "memorising")).toBe(14.5));
 });
 
 describe("editable hours", () => {
