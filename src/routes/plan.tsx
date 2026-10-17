@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { dailyTarget, daysLeft, fmtHours, loadPlan, todayKey, totalHours, type Plan } from "@/lib/semplan";
+import { dailyTarget, daysLeft, fmtHours, loadPlan, todayKey, totalHours, gamifyPoints, cashbackFor, type Plan } from "@/lib/semplan";
 
 export const Route = createFileRoute("/plan")({
   head: () => ({
@@ -24,6 +24,7 @@ function PlanPage() {
   const [studied, setStudied] = useState<Record<string, number>>({});
   const [start, setStart] = useState<StartState>(null);
   const [now, setNow] = useState(Date.now());
+  const [gamifyOpen, setGamifyOpen] = useState(false);
 
   useEffect(() => {
     setPlan(loadPlan());
@@ -103,6 +104,10 @@ function PlanPage() {
         </div>
         <p className="text-sm text-muted-foreground">{fmtHours(studiedH)} studied · {Math.round(pct)}%{pct >= 100 ? " — target hit! 🎉" : ""}</p>
         <p className="text-sm text-muted-foreground">Tap a subject below to start studying it.</p>
+      </section>
+
+      <section>
+        <button className="btn-big btn-secondary flex" onClick={() => setGamifyOpen(true)}>🎮 Gamify?</button>
       </section>
 
       <section className="space-y-2">
