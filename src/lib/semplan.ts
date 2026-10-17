@@ -1,5 +1,6 @@
 export type Difficulty = "easy" | "medium" | "hard";
 export type SubjectType = "problem-solving" | "memorising" | "mixed";
+export type Subtopic = { id: string; name: string; minutes: number };
 export type Subject = {
   id: string;
   name: string;
@@ -7,6 +8,7 @@ export type Subject = {
   difficulty: Difficulty;
   type: SubjectType;
   hours: number; // student-editable total hours
+  subtopics: Subtopic[];
 };
 export const EXAMS = ["Cycle Test 1", "Cycle Test 2", "Mid-Sem", "End-Sem"] as const;
 export type Plan = { subjects: Subject[]; exam: string; examDate: string };
@@ -44,6 +46,21 @@ export const fmtHours = (h: number) => {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 };
 
+// ===== Subtopics =====
+export const subtopicPoints = (minutes: number) => Math.floor(minutes / 6);
+
+export type SubtopicProgress = { done: number; total: number; doneMinutes: number; totalMinutes: number };
+export const subtopicProgress = (s: Subject, checked: Record<string, boolean>): SubtopicProgress => {
+  const subs = s.subtopics || [];
+  const done = subs.filter((t) => checked[t.id]);
+  return {
+    done: done.length,
+    total: subs.length,
+    doneMinutes: done.reduce((a, t) => a + t.minutes, 0),
+    totalMinutes: subs.reduce((a, t) => a + t.minutes, 0),
+  };
+};
+
 // ===== Gamify =====
 export const POINTS_PER_HOUR = 10;
 export const CASHBACK_MAX = 20;
@@ -60,11 +77,12 @@ export const loadPlan = (): Plan | null => {
   try {
     const p = JSON.parse(localStorage.getItem(KEY) || "null");
     if (!p) return null;
-    // Migrate old plans without type/hours
-    p.subjects = (p.subjects || []).map((s: Subject & { type?: SubjectType; hours?: number }) => ({
+    // Migrate old plans without type/hours/subtopics
+    p.subjects = (p.subjects || []).map((s: Subject & { type?: SubjectType; hours?: number; subtopics?: Subtopic[] }) => ({
       ...s,
       type: s.type ?? "mixed",
       hours: s.hours ?? suggestedHours(s.credits, s.difficulty, s.type ?? "mixed"),
+      subtopics: s.subtopics ?? [],
     }));
     return p;
   } catch {
@@ -72,3 +90,13 @@ export const loadPlan = (): Plan | null => {
   }
 };
 export const savePlan = (p: Plan) => localStorage.setItem(KEY, JSON.stringify(p));
+
+const CHECK_KEY = "semplan.subtopics"; // { [subtopicId]: true }
+export const loadChecked = (): Record<string, boolean> => {
+  try {
+    return JSON.parse(localStorage.getItem(CHECK_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
+export const saveChecked = (c: Record<string, boolean>) => localStorage.setItem(CHECK_KEY, JSON.stringify(c));
