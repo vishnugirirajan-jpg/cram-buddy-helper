@@ -40,7 +40,6 @@ function Setup() {
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [type, setType] = useState<SubjectType>("mixed");
   const [hours, setHours] = useState<string>("");
-  const [hoursTouched, setHoursTouched] = useState(false);
 
   useEffect(() => {
     const p = loadPlan();
@@ -48,15 +47,14 @@ function Setup() {
   }, []);
 
   const suggested = suggestedHours(credits, difficulty, type);
-  const hoursNum = hoursTouched ? Number(hours) : suggested;
-  const lowWarning = isLowHours(hoursNum, suggested);
+  const hoursNum = Number(hours);
+  const lowWarning = hours !== "" && isLowHours(hoursNum, suggested);
 
   const add = () => {
     if (!name.trim() || !(hoursNum > 0)) return;
-    setSubjects([...subjects, { id: crypto.randomUUID(), name: name.trim(), credits, difficulty, type, hours: hoursNum }]);
+    setSubjects([...subjects, { id: crypto.randomUUID(), name: name.trim(), credits, difficulty, type, hours: hoursNum, subtopics: [] }]);
     setName("");
     setHours("");
-    setHoursTouched(false);
   };
 
   const go = () => {
@@ -99,15 +97,24 @@ function Setup() {
           </div>
         </div>
         <div>
-          <p className="label">Total study hours (suggested: {suggested}h)</p>
-          <input
-            className="field"
-            type="number"
-            min={0.5}
-            step={0.5}
-            value={hoursTouched ? hours : String(suggested)}
-            onChange={(e) => { setHours(e.target.value); setHoursTouched(true); }}
-          />
+          <p className="label">How many hours do you think you need?</p>
+          <div className="flex gap-2">
+            <input
+              className="field flex-1"
+              type="number"
+              min={0.5}
+              step={0.5}
+              placeholder="e.g. 12"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+            />
+            <button className="chip whitespace-nowrap" onClick={() => setHours(String(suggested))}>
+              Suggest for me
+            </button>
+          </div>
+          {hours !== "" && (
+            <p className="text-sm text-muted-foreground mt-1">Suggested for this subject: {suggested}h</p>
+          )}
           {lowWarning && (
             <p className="text-sm text-destructive mt-1">This is much lower than recommended. Are you sure?</p>
           )}
