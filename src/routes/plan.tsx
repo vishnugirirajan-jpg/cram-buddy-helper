@@ -1,6 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { dailyTarget, daysLeft, fmtHours, loadPlan, todayKey, totalHours, gamifyPoints, cashbackFor, type Plan } from "@/lib/semplan";
+import {
+  dailyTarget,
+  daysLeft,
+  fmtHours,
+  loadPlan,
+  savePlan,
+  todayKey,
+  totalHours,
+  gamifyPoints,
+  cashbackFor,
+  subtopicPoints,
+  subtopicProgress,
+  loadChecked,
+  saveChecked,
+  type Plan,
+} from "@/lib/semplan";
 
 export const Route = createFileRoute("/plan")({
   head: () => ({
@@ -25,6 +40,9 @@ function PlanPage() {
   const [start, setStart] = useState<StartState>(null);
   const [now, setNow] = useState(Date.now());
   const [gamifyOpen, setGamifyOpen] = useState(false);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [subName, setSubName] = useState<Record<string, string>>({});
+  const [subMins, setSubMins] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setPlan(loadPlan());
@@ -32,6 +50,7 @@ function PlanPage() {
     setStudied(all[todayKey()] || {});
     const s = localStorage.getItem(START_KEY);
     if (s) setStart(JSON.parse(s));
+    setChecked(loadChecked());
   }, []);
 
   useEffect(() => {
@@ -48,7 +67,6 @@ function PlanPage() {
   };
 
   const startTimer = (subjectId: string) => {
-    // Stop any running timer first, saving its time
     let base = studied;
     if (start) {
       base = { ...studied, [start.subjectId]: (studied[start.subjectId] || 0) + (Date.now() - start.at) };
@@ -68,6 +86,49 @@ function PlanPage() {
     setStart(null);
   };
 
+  const updatePlan = (next: Plan) => {
+    setPlan(next);
+    savePlan(next);
+  };
+
+  const addSubtopic = (subjectId: string) => {
+    if (!plan) return;
+    const name = (subName[subjectId] || "").trim();
+    const minutes = Number(subMins[subjectId]);
+    if (!name || !(minutes > 0)) return;
+    updatePlan({
+      ...plan,
+      subjects: plan.subjects.map((s) =>
+        s.id === subjectId
+          ? { ...s, subtopics: [...s.subtopics, { id: crypto.randomUUID(), name, minutes }] }
+          : s,
+      ),
+    });
+    setSubName({ ...subName, [subjectId]: "" });
+    setSubMins({ ...subMins, [subjectId]: "" });
+  };
+
+  const removeSubtopic = (subjectId: string, subtopicId: string) => {
+    if (!plan) return;
+    updatePlan({
+      ...plan,
+      subjects: plan.subjects.map((s) =>
+        s.id === subjectId ? { ...s, subtopics: s.subtopics.filter((t) => t.id !== subtopicId) } : s,
+      ),
+    });
+    const next = { ...checked };
+    delete next[subtopicId];
+    setChecked(next);
+    saveChecked(next);
+  };
+
+  const toggleSubtopic = (subtopicId: string) => {
+    const next = { ...checked, [subtopicId]: !checked[subtopicId] };
+    if (!next[subtopicId]) delete next[subtopicId];
+    setChecked(next);
+    saveChecked(next);
+  };
+
   if (!plan) {
     return (
       <main className="mx-auto max-w-md px-5 py-16 text-center space-y-4">
@@ -84,6 +145,10 @@ function PlanPage() {
   const studiedH = totalLiveMs / 3600000;
   const pct = Math.min(100, target ? (studiedH / target) * 100 : 0);
   const clock = new Date(totalLiveMs).toISOString().slice(11, 19);
+  const subPoints = plan.subjects.reduce(
+    (a, s) => a + s.subtopics.filter((t) => checked[t.id]).reduce((x, t) => x + subtopicPoints(t.minutes), 0),
+    0,
+  );
 
   return (
     <main className="mx-auto max-w-md px-5 py-8 space-y-6">
@@ -116,6 +181,7 @@ function PlanPage() {
           const running = start?.subjectId === s.id;
           const ms = liveMs(s.id);
           const subClock = new Date(ms).toISOString().slice(11, 19);
+          const prog = subtopicProgress(s, checked);
           return (
             <div key={s.id} className={`card-box py-3 space-y-3 ${running ? "ring-2 ring-primary" : ""}`}>
               <div className="flex items-center justify-between">
@@ -136,6 +202,47 @@ function PlanPage() {
                   <button className="btn-big btn-primary" onClick={() => startTimer(s.id)}>▶ Start</button>
                 )}
               </div>
+
+              <div className="border-t border-border pt-3 space-y-2">
+                <p className="label">Subtopics</p>
+                {prog.total > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {prog.done} of {prog.total} done · {fmtHours(prog.doneMinutes / 60)} of {fmtHours(prog.totalMinutes / 60)} estimated time completed
+                  </p>
+                )}
+                {s.subtopics.map((t) => (
+                  <div key={t.id} className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-primary"
+                      checked={!!checked[t.id]}
+                      onChange={() => toggleSubtopic(t.id)}
+                      aria-label={`Mark ${t.name} done`}
+                    />
+                    <span className={`flex-1 ${checked[t.id] ? "line-through text-muted-foreground" : ""}`}>
+                      {t.name} <span className="text-sm text-muted-foreground">· {t.minutes} min · {subtopicPoints(t.minutes)} pts</span>
+                    </span>
+                    <button aria-label={`Remove ${t.name}`} className="text-destructive text-xl px-1" onClick={() => removeSubtopic(s.id, t.id)}>×</button>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <input
+                    className="field flex-1"
+                    placeholder="Subtopic name"
+                    value={subName[s.id] || ""}
+                    onChange={(e) => setSubName({ ...subName, [s.id]: e.target.value })}
+                  />
+                  <input
+                    className="field w-24"
+                    type="number"
+                    min={1}
+                    placeholder="min"
+                    value={subMins[s.id] || ""}
+                    onChange={(e) => setSubMins({ ...subMins, [s.id]: e.target.value })}
+                  />
+                  <button className="chip whitespace-nowrap" onClick={() => addSubtopic(s.id)}>+ Add</button>
+                </div>
+              </div>
             </div>
           );
         })}
@@ -150,13 +257,13 @@ function PlanPage() {
             <h2 className="font-display text-2xl font-bold">🎮 Gamify your study</h2>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Pay a Rs 50 deposit to join the challenge.</li>
-              <li>• Earn 10 points for every hour you study.</li>
+              <li>• Earn 10 points for every hour you study, plus 1 point per 6 minutes of each subtopic you tick off.</li>
               <li>• Get back up to Rs 20 as cashback credit, depending on how much of your plan you complete.</li>
             </ul>
             <div className="rounded-xl bg-secondary p-4 grid grid-cols-2 gap-2 text-center">
               <div>
                 <p className="label">Points</p>
-                <p className="font-display text-3xl font-bold text-primary">{gamifyPoints(studiedH)}</p>
+                <p className="font-display text-3xl font-bold text-primary">{gamifyPoints(studiedH) + subPoints}</p>
               </div>
               <div>
                 <p className="label">Cashback credit</p>

@@ -1,7 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { totalHours, daysLeft, dailyTarget, suggestedHours, isLowHours, gamifyPoints, cashbackFor, type Subject } from "@/lib/semplan";
+import {
+  totalHours,
+  daysLeft,
+  dailyTarget,
+  suggestedHours,
+  isLowHours,
+  gamifyPoints,
+  cashbackFor,
+  subtopicPoints,
+  subtopicProgress,
+  type Subject,
+} from "@/lib/semplan";
 
-const subj = (hours: number): Subject => ({ id: "a", name: "x", credits: 4, difficulty: "hard", type: "mixed", hours });
+const subj = (hours: number): Subject => ({ id: "a", name: "x", credits: 4, difficulty: "hard", type: "mixed", hours, subtopics: [] });
 
 describe("suggested hours formula", () => {
   it("easy = 2h per credit, medium = 3h, hard = 4h (mixed type, x1.0)", () => {
@@ -45,5 +56,33 @@ describe("gamify", () => {
     expect(cashbackFor(50)).toBe(10);
     expect(cashbackFor(100)).toBe(20);
     expect(cashbackFor(150)).toBe(20); // never above Rs 20
+  });
+});
+
+describe("subtopics", () => {
+  const civil: Subject = {
+    ...subj(12),
+    subtopics: [
+      { id: "t1", name: "Roofs", minutes: 30 },
+      { id: "t2", name: "Walls", minutes: 45 },
+      { id: "t3", name: "Beams", minutes: 55 },
+    ],
+  };
+  it("gives 1 point per 6 minutes of estimate", () => {
+    expect(subtopicPoints(30)).toBe(5);
+    expect(subtopicPoints(45)).toBe(7);
+    expect(subtopicPoints(5)).toBe(0);
+  });
+  it("counts done subtopics and completed estimated time", () => {
+    const prog = subtopicProgress(civil, { t1: true, t3: true });
+    expect(prog.done).toBe(2);
+    expect(prog.total).toBe(3);
+    expect(prog.doneMinutes).toBe(85);
+    expect(prog.totalMinutes).toBe(130);
+  });
+  it("no subtopics means zero progress", () => {
+    const prog = subtopicProgress(subj(10), {});
+    expect(prog.total).toBe(0);
+    expect(prog.doneMinutes).toBe(0);
   });
 });
