@@ -44,6 +44,17 @@ export const fmtHours = (h: number) => {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 };
 
+// ===== Gamify =====
+export const POINTS_PER_HOUR = 10;
+export const CASHBACK_MAX = 20;
+
+/** Points earned: 10 per full hour studied. */
+export const gamifyPoints = (hoursStudied: number) => Math.floor(hoursStudied) * POINTS_PER_HOUR;
+
+/** Cashback credit in Rs: up to 20, proportional to plan completion (rounded to Rs 0.5). */
+export const cashbackFor = (pct: number) =>
+  Math.min(CASHBACK_MAX, Math.round((Math.max(0, pct) / 100) * CASHBACK_MAX * 2) / 2);
+
 const KEY = "semplan.plan";
 export const loadPlan = (): Plan | null => {
   try {

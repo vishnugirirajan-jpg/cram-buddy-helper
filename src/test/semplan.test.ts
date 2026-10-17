@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { totalHours, daysLeft, dailyTarget, suggestedHours, isLowHours, type Subject } from "@/lib/semplan";
+import { totalHours, daysLeft, dailyTarget, suggestedHours, isLowHours, gamifyPoints, cashbackFor, type Subject } from "@/lib/semplan";
 
 const subj = (hours: number): Subject => ({ id: "a", name: "x", credits: 4, difficulty: "hard", type: "mixed", hours });
 
@@ -32,4 +32,18 @@ describe("daily split", () => {
     expect(dailyTarget(subj(16), days)).toBe(4);
   });
   it("exam today still gives at least 1 day", () => expect(daysLeft("2026-10-17", new Date(2026, 9, 17))).toBe(1));
+});
+
+describe("gamify", () => {
+  it("awards 10 points per full hour studied", () => {
+    expect(gamifyPoints(0)).toBe(0);
+    expect(gamifyPoints(2.5)).toBe(20);
+    expect(gamifyPoints(5)).toBe(50);
+  });
+  it("cashback credit is up to Rs 20, proportional to plan completion", () => {
+    expect(cashbackFor(0)).toBe(0);
+    expect(cashbackFor(50)).toBe(10);
+    expect(cashbackFor(100)).toBe(20);
+    expect(cashbackFor(150)).toBe(20); // never above Rs 20
+  });
 });
