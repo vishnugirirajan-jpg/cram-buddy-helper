@@ -140,6 +140,41 @@ function PlanPage() {
           );
         })}
       </section>
+
+      {gamifyOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+          onClick={() => setGamifyOpen(false)}
+        >
+          <div className="card-box w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="font-display text-2xl font-bold">🎮 Gamify your study</h2>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• Pay a Rs 50 deposit to join the challenge.</li>
+              <li>• Earn 10 points for every hour you study.</li>
+              <li>• Get back up to Rs 20 as cashback credit, depending on how much of your plan you complete.</li>
+            </ul>
+            <div className="rounded-xl bg-secondary p-4 grid grid-cols-2 gap-2 text-center">
+              <div>
+                <p className="label">Points</p>
+                <p className="font-display text-3xl font-bold text-primary">{gamifyPoints(studiedH)}</p>
+              </div>
+              <div>
+                <p className="label">Cashback credit</p>
+                <p className="font-display text-3xl font-bold text-primary">Rs {cashbackFor(pct)}</p>
+              </div>
+            </div>
+            <a
+              href="https://example.com/semplan-pay"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-big btn-primary flex"
+            >
+              Pay Rs 50
+            </a>
+            <button className="btn-big btn-secondary flex" onClick={() => setGamifyOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
