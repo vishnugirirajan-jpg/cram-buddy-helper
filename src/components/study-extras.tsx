@@ -4,6 +4,8 @@ import { Award, ChevronRight, Gift, Play, Square, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatClock, PRO_SEMESTER_PRICE, readSaved, studyPoints, weekKey, weeklyGoalPoints, type WeeklyGoal } from "@/lib/rewards";
 import { fmtHours } from "@/lib/semplan";
+import { Link } from "@tanstack/react-router";
+import { usePro } from "@/hooks/use-pro";
 
 const FREE_KEY = "semplan.free-study";
 const GOALS_KEY = "semplan.weekly-goals";
@@ -109,12 +111,13 @@ export function StudyExtras({ examMs = 0, subtopicPoints = 0 }: { examMs?: numbe
 }
 
 export function ProCard() {
-  const [notice, setNotice] = useState(false);
+  const { active, ready } = usePro();
   return <section className="card-box space-y-3">
-    <h2 className="font-display text-lg font-bold flex items-center gap-2"><Award className="text-primary size-5" />Pro — Rs {PRO_SEMESTER_PRICE} per semester</h2>
+    <h2 className="font-display text-lg font-bold flex items-center gap-2"><Award className="text-primary size-5 shrink-0" />{active ? "Pro active" : `Pro — Rs ${PRO_SEMESTER_PRICE} per semester`}</h2>
     <ul className="text-sm text-muted-foreground space-y-1"><li>More than 3 subjects</li><li>Multiple exam plans per semester</li></ul>
-    <p className="text-sm text-muted-foreground">Free: 1 exam plan · 3 subjects. Free study and weekly goals included.</p>
-    <Button className="w-full h-12 text-lg" onClick={() => setNotice(true)}>Buy Pro</Button>
-    {notice && <p role="status" className="text-sm text-muted-foreground">Purchases are coming soon. No payment has been taken.</p>}
+    {active ? <p className="text-sm text-muted-foreground">Demo Pro is saved in this browser. No real money was charged.</p> : <>
+      <p className="text-sm text-muted-foreground">Free: 1 exam plan · 3 subjects. Free study and weekly goals included.</p>
+      {ready ? <Button asChild className="w-full h-12 text-lg"><Link to="/checkout">Buy Pro</Link></Button> : <Button disabled className="w-full h-12 text-lg">Buy Pro</Button>}
+    </>}
   </section>;
 }

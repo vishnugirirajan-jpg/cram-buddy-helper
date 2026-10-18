@@ -14,6 +14,7 @@ import {
 
 import { canAddSubject } from "@/lib/rewards";
 import { Button } from "@/components/ui/button";
+import { usePro } from "@/hooks/use-pro";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,6 +38,7 @@ const TYPE_LABEL: Record<SubjectType, string> = {
 
 function Setup() {
   const nav = useNavigate();
+  const { active: proActive, ready: proReady } = usePro();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [exam, setExam] = useState<string>(EXAMS[0]);
   const [examDate, setExamDate] = useState("");
@@ -56,7 +58,7 @@ function Setup() {
   const lowWarning = hours !== "" && isLowHours(hoursNum, suggested);
 
   const add = () => {
-    if (!name.trim() || !(hoursNum > 0) || !canAddSubject(subjects.length)) return;
+    if (!proReady || !name.trim() || !(hoursNum > 0) || !canAddSubject(subjects.length, proActive)) return;
     setSubjects([...subjects, { id: crypto.randomUUID(), name: name.trim(), credits, difficulty, type, hours: hoursNum, subtopics: [] }]);
     setName("");
     setHours("");
@@ -125,8 +127,8 @@ function Setup() {
             <p className="text-sm text-destructive mt-1">This is much lower than recommended. Are you sure?</p>
           )}
         </div>
-        <Button variant="secondary" className="btn-big" disabled={!canAddSubject(subjects.length)} onClick={add}>+ Add subject</Button>
-        {!canAddSubject(subjects.length) && <p className="text-sm text-muted-foreground" role="status">Free includes 3 subjects. Pro unlocks more subjects.</p>}
+        <Button variant="secondary" className="btn-big" disabled={!proReady || !canAddSubject(subjects.length, proActive)} onClick={add}>+ Add subject</Button>
+        {proReady && !canAddSubject(subjects.length, proActive) && <p className="text-sm text-muted-foreground" role="status">Free includes 3 subjects. Pro unlocks more subjects.</p>}
       </section>
 
       {subjects.length > 0 && (
