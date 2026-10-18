@@ -76,7 +76,7 @@ export function StudyExtras({ examMs = 0, subtopicPoints = 0 }: { examMs?: numbe
 
     <section className="space-y-3" aria-labelledby="free-study-title">
       <div className="flex justify-between items-center"><h2 id="free-study-title" className="font-display text-xl font-semibold">Free study</h2><span className="text-sm text-muted-foreground">No exam</span></div>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <p className="font-mono text-3xl tabular-nums flex-1" aria-label="Free study time">{formatClock(freeMs)}</p>
         <Button disabled={!ready} onClick={toggleTimer} variant={free.startedAt === null ? "default" : "destructive"} className="h-14 px-6 text-lg">
           {free.startedAt === null ? <Play /> : <Square />}{free.startedAt === null ? "Start free study" : "Stop free study"}

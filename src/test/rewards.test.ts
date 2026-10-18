@@ -6,6 +6,7 @@ describe("rewards and free limits", () => {
     expect(studyPoints(3600000, 3600000)).toBe(20);
     expect(studyPoints(0, 3600000)).toBe(10);
     expect(studyPoints(0, 3599999)).toBe(0);
+    expect(studyPoints(1800000, 1800000)).toBe(10);
   });
   it("earns 20 points per checked weekly goal without repeated-toggle bonuses", () => {
     const goal: WeeklyGoal = { id: "a", name: "Revise maths", week: "2026-10-12", done: true };
