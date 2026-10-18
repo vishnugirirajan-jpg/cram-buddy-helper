@@ -6,3 +6,6 @@
 - [x] Verify calculations and complete browser flows.
 - [x] Add test-mode checkout and success screen, save Pro activation, and unlock additional subjects.
 - [x] Verify demo checkout, refresh persistence, and adding a fourth subject.
+- [ ] Add default-dark theme system, free light toggle, and centralized palettes.
+- [ ] Add reward theme previews, point unlocks, Pro access, and browser persistence.
+- [ ] Verify theme pricing rules and browser flows.
