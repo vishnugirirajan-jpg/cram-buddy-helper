@@ -4,5 +4,5 @@
 - [x] Add browser-saved weekly goals worth 20 points each.
 - [x] Add Pro placeholder and enforce free plan/subject limits.
 - [x] Verify calculations and complete browser flows.
-- [ ] Add test-mode checkout and success screen, save Pro activation, and unlock additional subjects.
-- [ ] Verify demo checkout, refresh persistence, and adding a fourth subject.
+- [x] Add test-mode checkout and success screen, save Pro activation, and unlock additional subjects.
+- [x] Verify demo checkout, refresh persistence, and adding a fourth subject.
