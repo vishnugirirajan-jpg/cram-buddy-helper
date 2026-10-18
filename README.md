@@ -1,34 +1,41 @@
-# Cram Buddy Helper
+# SemPlan (repo: cram-buddy-helper)
 
-Build a simple mobile-friendly web app called "SemPlan" for college students who have 4 exams per semester: Cycle Test 1, Cycle Test 2, Mid-Sem, End-Sem.
+A study planner for college students whose semester has Cycle Test 1, Cycle Test 2, Mid-Sem and End-Sem.
 
-Page 1: The student adds their subjects (name, credits 1-4, difficulty: easy/medium/hard) and picks the date of their next exam.
+**Live app:** https://cram-buddy-helper.lovable.app
 
-Page 2: Show for each subject the total study hours needed (use a simple formula: credits x difficulty weight, where easy=2, medium=3, hard=4 hours per credit), divide it evenly across the days left, and show a "today's target" in hours.
+## What it does
+- Add subjects with credits, difficulty and type (problem-solving, memorising or mixed).
+- Enter how many hours you think you need, or tap "Suggest for me". A warning appears if you enter much less than suggested.
+- Pick your next exam and date to get a daily study target.
+- Run a separate stopwatch for each subject.
+- Add subtopics with time estimates and tick them off to earn points.
+- Free study mode and weekly goals, both earning points.
+- Free plan: 1 exam plan, 3 subjects. Pro (Rs 49 per semester): more subjects and multiple exam plans.
 
-Include an hour counter with Start / Stop buttons that adds time studied to today's total and shows progress toward today's target.
+## Who it's for
+College students, starting with first-years at NIT Trichy, whose exams follow the cycle test, mid-sem and end-sem pattern.
 
-Keep the design clean and simple, dark theme, big buttons. Explain in plain English what you built after each step.
+## How it earns
+Free tier to try the planner, then Rs 49 per semester for Pro. The price is a guess and has not been validated. I asked 24 students whether they would pay, and 18 said they would consider it. This is interest, not sales.
 
-This project was built with [Lovable](https://lovable.dev).
+## Tech stack
+Built with Lovable (React and TypeScript), hosted on Lovable. Data is stored in the browser.
 
-**Live app**: https://cram-buddy-helper.lovable.app
+## How I used AI
+I have no coding background. I used Lovable's AI builder to create the app by describing features and testing each change, and I used Claude to plan the product and write prompts.
 
-## Build with Lovable
+## Render Workflows
+Not used.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/73ae3dd7-1999-4d1c-8f86-a902b2d077e2).
+## How to run it
+Open the live link. To run locally, install Node.js, then run `npm i` and `npm run dev`.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+## Known limitations
+- No accounts. Data lives in one browser, so clearing it or changing phones loses everything.
+- The hour suggestion is a simple formula, not proven to improve grades.
+- Study time can be faked, so points can be gamed.
+- Payment is a demo checkout in test mode. No real money is taken and Pro is not verified by a server.
+- Points cannot be redeemed yet. Themes, badges and discounts are planned but not built.
+- It's a website, not a native app.
+- Tested with few users and only one college's exam pattern.
