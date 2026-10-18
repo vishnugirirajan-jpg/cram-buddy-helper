@@ -8,14 +8,15 @@ import {
   savePlan,
   todayKey,
   totalHours,
-  gamifyPoints,
-  cashbackFor,
   subtopicPoints,
   subtopicProgress,
   loadChecked,
   saveChecked,
   type Plan,
 } from "@/lib/semplan";
+
+import { StudyExtras } from "@/components/study-extras";
+import { formatClock, readSaved } from "@/lib/rewards";
 
 export const Route = createFileRoute("/plan")({
   head: () => ({
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/plan")({
       { name: "description", content: "Your daily study target per subject and a study timer." },
       { property: "og:title", content: "SemPlan — Today's study plan" },
       { property: "og:description", content: "See today's target and track study time." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: PlanPage,
@@ -39,15 +42,16 @@ function PlanPage() {
   const [studied, setStudied] = useState<Record<string, number>>({});
   const [start, setStart] = useState<StartState>(null);
   const [now, setNow] = useState(Date.now());
-  const [gamifyOpen, setGamifyOpen] = useState(false);
+  const [previousMs, setPreviousMs] = useState(0);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [subName, setSubName] = useState<Record<string, string>>({});
   const [subMins, setSubMins] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setPlan(loadPlan());
-    const all = JSON.parse(localStorage.getItem(STUDY_KEY) || "{}");
+    const all = readSaved<Record<string, Record<string, number>>>(STUDY_KEY, {});
     setStudied(all[todayKey()] || {});
+    setPreviousMs(Object.entries(all).filter(([day]) => day !== todayKey()).reduce((sum, [, values]) => sum + Object.values(values).reduce((a, ms) => a + ms, 0), 0));
     const s = localStorage.getItem(START_KEY);
     if (s) setStart(JSON.parse(s));
     setChecked(loadChecked());
@@ -131,9 +135,10 @@ function PlanPage() {
 
   if (!plan) {
     return (
-      <main className="mx-auto max-w-md px-5 py-16 text-center space-y-4">
-        <p className="text-muted-foreground">No plan yet.</p>
-        <Link to="/" className="btn-big btn-primary inline-flex">Add subjects</Link>
+      <main className="mx-auto max-w-md px-5 py-8 space-y-6">
+        <h1 className="font-display text-3xl font-bold">SemPlan</h1>
+        <Link to="/" className="text-primary font-semibold inline-flex">Add an exam plan →</Link>
+        <StudyExtras examMs={previousMs + Object.values(studied).reduce((sum, ms) => sum + ms, 0) + (start ? Math.max(0, now - start.at) : 0)} />
       </main>
     );
   }
@@ -144,7 +149,8 @@ function PlanPage() {
   const totalLiveMs = plan.subjects.reduce((a, s) => a + liveMs(s.id), 0);
   const studiedH = totalLiveMs / 3600000;
   const pct = Math.min(100, target ? (studiedH / target) * 100 : 0);
-  const clock = new Date(totalLiveMs).toISOString().slice(11, 19);
+  const clock = formatClock(totalLiveMs);
+  const rewardExamMs = previousMs + Object.values(studied).reduce((sum, ms) => sum + ms, 0) + (start ? Math.max(0, now - start.at) : 0);
   const subPoints = plan.subjects.reduce(
     (a, s) => a + s.subtopics.filter((t) => checked[t.id]).reduce((x, t) => x + subtopicPoints(t.minutes), 0),
     0,
@@ -171,9 +177,7 @@ function PlanPage() {
         <p className="text-sm text-muted-foreground">Tap a subject below to start studying it.</p>
       </section>
 
-      <section>
-        <button className="btn-big btn-secondary flex" onClick={() => setGamifyOpen(true)}>🎮 Gamify?</button>
-      </section>
+      <StudyExtras examMs={rewardExamMs} subtopicPoints={subPoints} />
 
       <section className="space-y-2">
         <h2 className="font-display text-lg font-semibold">By subject</h2>
@@ -248,40 +252,7 @@ function PlanPage() {
         })}
       </section>
 
-      {gamifyOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm p-4"
-          onClick={() => setGamifyOpen(false)}
-        >
-          <div className="card-box w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="font-display text-2xl font-bold">🎮 Gamify your study</h2>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>• Pay a Rs 50 deposit to join the challenge.</li>
-              <li>• Earn 10 points for every hour you study, plus 1 point per 6 minutes of each subtopic you tick off.</li>
-              <li>• Get back up to Rs 20 as cashback credit, depending on how much of your plan you complete.</li>
-            </ul>
-            <div className="rounded-xl bg-secondary p-4 grid grid-cols-2 gap-2 text-center">
-              <div>
-                <p className="label">Points</p>
-                <p className="font-display text-3xl font-bold text-primary">{gamifyPoints(studiedH) + subPoints}</p>
-              </div>
-              <div>
-                <p className="label">Cashback credit</p>
-                <p className="font-display text-3xl font-bold text-primary">Rs {cashbackFor(pct)}</p>
-              </div>
-            </div>
-            <a
-              href="https://example.com/semplan-pay"
-              target="_blank"
-              rel="noreferrer"
-              className="btn-big btn-primary flex"
-            >
-              Pay Rs 50
-            </a>
-            <button className="btn-big btn-secondary flex" onClick={() => setGamifyOpen(false)}>Close</button>
-          </div>
-        </div>
-      )}
+
     </main>
   );
 }

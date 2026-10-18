@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   EXAMS,
@@ -12,6 +12,9 @@ import {
   type SubjectType,
 } from "@/lib/semplan";
 
+import { canAddSubject } from "@/lib/rewards";
+import { Button } from "@/components/ui/button";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -19,6 +22,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Add your subjects and next exam date to get a daily study plan." },
       { property: "og:title", content: "SemPlan — Add your subjects" },
       { property: "og:description", content: "Plan study hours for Cycle Tests, Mid-Sem and End-Sem." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Setup,
@@ -51,7 +56,7 @@ function Setup() {
   const lowWarning = hours !== "" && isLowHours(hoursNum, suggested);
 
   const add = () => {
-    if (!name.trim() || !(hoursNum > 0)) return;
+    if (!name.trim() || !(hoursNum > 0) || !canAddSubject(subjects.length)) return;
     setSubjects([...subjects, { id: crypto.randomUUID(), name: name.trim(), credits, difficulty, type, hours: hoursNum, subtopics: [] }]);
     setName("");
     setHours("");
@@ -67,6 +72,7 @@ function Setup() {
       <header>
         <h1 className="font-display text-4xl font-bold text-primary">SemPlan</h1>
         <p className="text-muted-foreground mt-1">Add your subjects, pick your next exam.</p>
+        <Link to="/plan" className="inline-flex mt-3 text-primary font-semibold">Free study & rewards →</Link>
       </header>
 
       <section className="card-box space-y-4">
@@ -119,7 +125,8 @@ function Setup() {
             <p className="text-sm text-destructive mt-1">This is much lower than recommended. Are you sure?</p>
           )}
         </div>
-        <button className="btn-big btn-secondary" onClick={add}>+ Add subject</button>
+        <Button variant="secondary" className="btn-big" disabled={!canAddSubject(subjects.length)} onClick={add}>+ Add subject</Button>
+        {!canAddSubject(subjects.length) && <p className="text-sm text-muted-foreground" role="status">Free includes 3 subjects. Pro unlocks more subjects.</p>}
       </section>
 
       {subjects.length > 0 && (
