@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canAddSubject, FREE_PLAN_LIMIT, PRO_SEMESTER_PRICE, studyPoints, weeklyGoalPoints, weekKey, type WeeklyGoal } from "@/lib/rewards";
+import { activateDemoPro, loadProActive, PRO_KEY, canAddSubject, FREE_PLAN_LIMIT, PRO_SEMESTER_PRICE, studyPoints, weeklyGoalPoints, weekKey, type WeeklyGoal } from "@/lib/rewards";
 
 describe("rewards and free limits", () => {
   it("earns 10 points per full study hour including free study", () => {
@@ -20,6 +20,19 @@ describe("rewards and free limits", () => {
     expect(canAddSubject(4)).toBe(false);
   });
   it("allows one free exam plan", () => expect(FREE_PLAN_LIMIT).toBe(1));
+  it("removes the three-subject limit for active Pro", () => {
+    expect(canAddSubject(3, true)).toBe(true);
+    expect(canAddSubject(50, true)).toBe(true);
+    expect(canAddSubject(3, false)).toBe(false);
+  });
+  it("saves successful demo Pro activation in browser storage", () => {
+    localStorage.removeItem(PRO_KEY);
+    expect(loadProActive()).toBe(false);
+    activateDemoPro();
+    expect(JSON.parse(localStorage.getItem("semplan.pro") || "null")).toEqual({ active: true, mode: "test" });
+    expect(loadProActive()).toBe(true);
+    localStorage.removeItem(PRO_KEY);
+  });
   it("prices Pro at Rs 49 per semester", () => expect(PRO_SEMESTER_PRICE).toBe(49));
   it("groups goals by Monday-to-Sunday week", () => {
     expect(weekKey(new Date(2026, 9, 17))).toBe("2026-10-12");

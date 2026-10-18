@@ -5,7 +5,10 @@ export const FREE_PLAN_LIMIT = 1;
 export const PRO_SEMESTER_PRICE = 49;
 export const WEEKLY_GOAL_POINTS = 20;
 export type WeeklyGoal = { id: string; name: string; week: string; done: boolean };
-export const canAddSubject = (count: number) => count < FREE_SUBJECT_LIMIT;
+export const canAddSubject = (count: number, proActive = false) => proActive || count < FREE_SUBJECT_LIMIT;
+export const PRO_KEY = "semplan.pro";
+export const loadProActive = () => readSaved<{ active?: boolean } | null>(PRO_KEY, null)?.active === true;
+export const activateDemoPro = () => localStorage.setItem(PRO_KEY, JSON.stringify({ active: true, mode: "test" }));
 
 export function weekKey(date = new Date()) {
   const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
